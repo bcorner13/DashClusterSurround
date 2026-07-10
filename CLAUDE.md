@@ -7,8 +7,6 @@ steering-wheel clearance by dialing `FaceArcRadius` (flat↔concave) and
 knobs, the part loses its entire purpose and a re-print can't be dialed in.
 Read the full rules below before making any geometry change.
 
-> **How to use this template:** Every `[FILL: …]` marker is a required edit. Leave none. A thin CLAUDE.md (one that just restates the global rules) is the failure mode this template exists to prevent — the point is to capture *this project's* specific topology, history, and current state, so the user does not have to re-explain it each session.
-
 ---
 
 ## Hard rules (this project)
