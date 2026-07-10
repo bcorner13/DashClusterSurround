@@ -1,0 +1,113 @@
+# -*- coding: utf-8 -*-
+# bootstrap_params.FCMacro — create Params.FCStd VarSet for Dash Cluster Surround.
+#
+# Idempotent: safe to re-run. Creates the Params document + a VarSet object named
+# "VarSet", then adds any missing properties with their placeholder defaults.
+# Existing properties/values are left untouched (so a re-run never clobbers values
+# you've already tuned from the scan).
+#
+# Values here are PLACEHOLDERS flagged [measure] in plan.md — replace them with
+# scan/caliper-derived values before building geometry. All are consumed by
+# geometry via cross-doc expressions of the form <<Params>>#VarSet.VarName.
+#
+# Run: Macro -> Macros... -> Execute (with FreeCAD open). Does NOT save the
+# document — save manually after review (project save policy: never auto-save).
+
+import os
+import FreeCAD as App
+
+DOC_NAME = "Params"
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PARAMS_PATH = os.path.join(PROJECT_DIR, "Params.FCStd")
+
+# (name, freecad_property_type, group, default_value, doc)
+# Length -> App::PropertyLength (mm) | Angle -> App::PropertyAngle (deg)
+# Integer -> App::PropertyInteger | Float -> App::PropertyFloat (unitless)
+PARAMS = [
+    # Group: Face
+    ("PanelWidth",        "App::PropertyLength",  "Face", 300.0, "[measure] overall surround width; keep <=330 for K2 Plus"),
+    ("PanelHeight",       "App::PropertyLength",  "Face", 110.0, "[measure] front face height"),
+    ("FaceThick",         "App::PropertyLength",  "Face", 3.0,   "front face wall thickness"),
+    ("FaceTilt",          "App::PropertyAngle",   "Face", 12.0,  "[measure] rearward tilt of face from vertical"),
+    ("CornerFillet",      "App::PropertyLength",  "Face", 6.0,   "outer corner rounding"),
+    # Group: Clearance-redesign knobs
+    ("FaceArcRadius",     "App::PropertyLength",  "Clearance", 4000.0, "[measure] concave arc radius; huge=flat, ~wheel radius=hugs wheel"),
+    ("ProtrusionSetback", "App::PropertyLength",  "Clearance", 0.0,    "uniform rearward (-Y) shift to gain wheel clearance"),
+    ("WheelClearanceGap", "App::PropertyLength",  "Clearance", 8.0,    "[measure] target min gap surround->wheel rim (design reference)"),
+    # Group: Hood (glare shade)
+    ("HoodProjection",    "App::PropertyLength",  "Hood", 40.0, "[measure] forward (+Y) depth of hood shelf"),
+    ("HoodRake",          "App::PropertyAngle",   "Hood", 10.0, "downward/rearward rake of hood"),
+    ("HoodThick",         "App::PropertyLength",  "Hood", 3.0,  "hood wall thickness"),
+    ("HoodSlotWidth",     "App::PropertyLength",  "Hood", 0.0,  "optional styling/defog slot width (0 = no slot)"),
+    ("HoodSlotLength",    "App::PropertyLength",  "Hood", 60.0, "slot length when enabled"),
+    # Group: Gauge bores
+    ("LargeGaugeDia",     "App::PropertyLength",  "Gauge", 100.0, "[measure] speedo/tach cutout diameter (pre-clearance)"),
+    ("MinorGaugeDia",     "App::PropertyLength",  "Gauge", 52.0,  "[measure] 2-1/16in minor gauge cutout diameter"),
+    ("GaugeClearance",    "App::PropertyLength",  "Gauge", 0.3,   "print-fit clearance added to each gauge bore radius (PLA)"),
+    ("GaugeBoreChamfer",  "App::PropertyLength",  "Gauge", 1.0,   "front chamfer around each bore"),
+    # Per-gauge centers (G1/G2 large = speedo/tach; G3-G6 minor). [measure] all.
+    ("G1X", "App::PropertyLength", "GaugePos", -110.0, "[measure] gauge 1 (speedo) center X"),
+    ("G1Z", "App::PropertyLength", "GaugePos", 0.0,    "[measure] gauge 1 (speedo) center Z"),
+    ("G2X", "App::PropertyLength", "GaugePos", -20.0,  "[measure] gauge 2 (tach) center X"),
+    ("G2Z", "App::PropertyLength", "GaugePos", 0.0,    "[measure] gauge 2 (tach) center Z"),
+    ("G3X", "App::PropertyLength", "GaugePos", 45.0,   "[measure] minor gauge 3 center X"),
+    ("G3Z", "App::PropertyLength", "GaugePos", 25.0,   "[measure] minor gauge 3 center Z"),
+    ("G4X", "App::PropertyLength", "GaugePos", 100.0,  "[measure] minor gauge 4 center X"),
+    ("G4Z", "App::PropertyLength", "GaugePos", 25.0,   "[measure] minor gauge 4 center Z"),
+    ("G5X", "App::PropertyLength", "GaugePos", 45.0,   "[measure] minor gauge 5 center X"),
+    ("G5Z", "App::PropertyLength", "GaugePos", -25.0,  "[measure] minor gauge 5 center Z"),
+    ("G6X", "App::PropertyLength", "GaugePos", 100.0,  "[measure] minor gauge 6 center X"),
+    ("G6Z", "App::PropertyLength", "GaugePos", -25.0,  "[measure] minor gauge 6 center Z"),
+    # Group: Indicators
+    ("IndicatorHoleDia",   "App::PropertyLength", "Indicator", 12.7, "[caliper] chrome LED bezel bore (12-12.7 mm)"),
+    ("IndicatorClearance", "App::PropertyLength", "Indicator", 0.3,  "print-fit clearance for bezel bore"),
+    ("IndicatorPitch",     "App::PropertyLength", "Indicator", 30.0, "[measure] center-to-center of the 3 indicators"),
+    ("IndicatorCenterX",   "App::PropertyLength", "Indicator", 0.0,  "X of middle (HIGH BEAM) hole; centered between speedo & tach"),
+    ("IndicatorRowZ",      "App::PropertyLength", "Indicator", 40.0, "[measure] height of indicator row along top radius"),
+    # Group: Mounting
+    ("FlangeDepth",        "App::PropertyLength",  "Mount", 50.0, "[measure] rearward return depth of side flanges"),
+    ("FlangeThick",        "App::PropertyLength",  "Mount", 3.0,  "flange wall thickness"),
+    ("FastenerHoleDia",    "App::PropertyLength",  "Mount", 4.2,  "[measure] rivet/bolt shank diameter"),
+    ("RivetHoleClearance", "App::PropertyLength",  "Mount", 0.3,  "print-fit clearance for fastener holes"),
+    ("FastenerCount",      "App::PropertyInteger", "Mount", 4,    "[measure] fastener holes per side flange"),
+    ("FastenerPitch",      "App::PropertyLength",  "Mount", 30.0, "[measure] spacing of fastener holes along flange"),
+    ("FastenerInset",      "App::PropertyLength",  "Mount", 8.0,  "inset of holes from flange edge"),
+    # Group: Column notch
+    ("ColumnNotchWidth",   "App::PropertyLength",  "Notch", 60.0, "[measure] bottom center cutout width for column"),
+    ("ColumnNotchHeight",  "App::PropertyLength",  "Notch", 30.0, "[measure] bottom center cutout height"),
+]
+
+
+def get_or_create_doc():
+    for d in App.listDocuments().values():
+        if d.Name == DOC_NAME:
+            return d, False
+    if os.path.exists(PARAMS_PATH):
+        return App.openDocument(PARAMS_PATH), False
+    return App.newDocument(DOC_NAME), True
+
+
+def main():
+    doc, created = get_or_create_doc()
+
+    vs = doc.getObject("VarSet")
+    if vs is None:
+        vs = doc.addObject("App::VarSet", "VarSet")
+        vs.Label = "VarSet"
+
+    added, skipped = 0, 0
+    for name, ptype, group, default, docstr in PARAMS:
+        if name in vs.PropertiesList:
+            skipped += 1
+            continue
+        vs.addProperty(ptype, name, group, docstr)
+        setattr(vs, name, default)
+        added += 1
+
+    doc.recompute()
+    print("Params bootstrap: doc %s (%s), VarSet has %d props (+%d added, %d already present)."
+          % (DOC_NAME, "new" if created else "existing", len(vs.PropertiesList), added, skipped))
+    print("NOT saved. Review, then save to: %s" % PARAMS_PATH)
+
+
+main()
