@@ -1,5 +1,9 @@
 # Plan — Dash Cluster Surround
 
+> **Status: APPROVED 2026-07-10 (Bradley).** Geometry build unblocked, pending the
+> 3D scan of the stock part to replace `[measure]` placeholders. First CAD step
+> on return: run `macros/bootstrap_params.FCMacro` → save `Params.FCStd`.
+
 > AI-generated modeling plan per `PROJECT_BOOTSTRAP.md`. **Execution of CAD is
 > forbidden until this plan is approved.** All defaults below are placeholders
 > flagged **[measure]** — they get replaced with values derived from the 3D scan
